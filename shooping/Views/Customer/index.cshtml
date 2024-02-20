@@ -1,0 +1,338 @@
+﻿@{
+    ViewBag.Title = "Customers";
+}
+
+<div class="row mb-4">
+    <div class="col-auto">
+        <h2>Customers</h2>
+    </div>
+    <div class="col row justify-content-end">
+        <div class="col-auto align-items-center">
+            <div class="input-group ">
+                <label class="col-form-label px-2"> From Date : </label>
+                <input type="date" class="form-control" id="dateCreatedStart" placeholder="Search dateCreatedStart..." />
+            </div>
+
+        </div>
+        <div class="col-auto align-items-center">
+            <div class="input-group ">
+                <label class="col-form-label px-2"> To Date :  </label>
+                <input type="date" class="form-control" id="dateCreatedEnd" placeholder="Search dateCreatedEnd..." />
+            </div>
+        </div>
+    </div>
+    <div class="col-auto ml-4">
+        <div class="input-group col">
+            <input type="text" class="form-control" id="nameSearch" placeholder="Search customer..." />
+            <div class="input-group-text"> <span onclick="searchCustomers()">search</span></div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" onclick="openModal(null)">Add Customer</button>
+    </div>
+</div>
+
+<table class="table table-striped">
+    <thead bgcolor="green">
+        <tr>
+            <th style="cursor:pointer" onclick="sortCustomers('Name')"> Name <span class="sortDir" sort-for="Name"> ^ </span></th>
+            <th style="cursor:pointer" onclick="sortCustomers('Email')"> Email <span class="sortDir" sort-for="Email"> </span></th>
+            <th style="cursor:pointer" onclick="sortCustomers('Gender')"> Gender <span class="sortDir" sort-for="Gender"> </span></th>
+            <th style="cursor:pointer" onclick="sortCustomers('IsActive')"> IsActive <span class="sortDir" sort-for="IsActive"> </span></th>
+            <th style="cursor:pointer" onclick="sortCustomers('DateOfBirth')"> DateOfBirth <span class="sortDir" sort-for="DateOfBirth"> </span></th>
+            <th style="cursor:pointer" onclick="sortCustomers('Ratings')"> Ratings <span class="sortDir" sort-for="Ratings"> </span> </th>
+            <th> Actions </th>
+        </tr>
+    </thead>
+    <tbody id="tableBody">
+    </tbody>
+</table>
+<footer class="row mt-2">
+    <!-- Pagination -->
+    <span class="col">Total Customers : <span id="total-items">0</span> </span>
+
+    <nav class="col-auto" aria-label="Page navigation">
+        <ul class="pagination">
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="paginate(1)" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+
+            <!-- Page numbers will be dynamically updated by the JavaScript function -->
+
+
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="paginate(page)" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</footer>
+
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Create Customer</h5>
+            </div>
+            <div class="modal-body">
+                <form class="needs-validation" method="dialog" action="" novalidate>
+
+                    <input hidden id="customer-id" />
+
+                    <div class="row">
+                        <div class="col-6 my-2">
+                            <label for="customer-name" class="form-label"> Name</label>
+                            <input type="text" maxlength="20" pattern="^[A-Za-z]*$" minlength="3" id="customer-name" class="form-control" required />
+                            <div class="invalid-feedback">
+                                Please use criteria.
+                            </div>
+                        </div>
+                        <div class="col-6 my-2">
+                            <label for="customer-email" class="form-label"> Email</label>
+                            <input type="email" class="form-control" id="customer-email" required />
+                            <div class="invalid-feedback">
+                                Please use criteria.
+                            </div>
+                        </div>
+                        <div class="col-6 my-2">
+                            <span class="legend">Gender: </span>
+                            <fieldset id="genderFieldset">
+                                <input id="male" type="radio" name="gender" value="Male">
+                                <label for="male">Male</label>
+
+                                <input id="female" type="radio" name="gender" value="Female">
+                                <label for="female">Female</label>
+
+                                <input id="other" type="radio" name="gender" value="Other">
+                                <label for="other">Other</label>
+                            </fieldset>
+                        </div>
+
+                        <div class="col-6 form-group my-2">
+                            <label class="form-label" for="DateOfBirth">DateOfBirth:</label>
+                            <input class="form-control" type="date" id="birthday" required>
+                        </div>
+
+                        <div class="col-6 align-items-center d-flex  ">
+                            <div class="form-check">
+
+                                <input class="form-check-input" type="checkbox" id="yes" value="Yes">
+                                <label class="form-check-label" for="yes"> IsActive </label>
+
+                            </div>
+
+                        </div>
+                        <div class="col-6 my-2">
+                            <input type="range" step="0.5" min="0" max="5" class="slider" onchange="displayStars()" id="range">
+                            <label>Ratings</label>
+                            <div id="stars">
+
+                            </div>
+                            <div class="modal-footer">
+
+                                <button type="button" class="btn btn-primary" onclick="SaveCustomerData()">Submit</button>
+                                <button type="button" class="btn btn-secondary" id="back">Back</button>
+
+                            </div>
+
+                        </div>
+                </form>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+
+<script defer>
+    var Customers = [];
+    var sortOrder = "Name";
+    var sortDir = "asc";
+    var pageSize = 10;
+    var pageNumber = 1;
+    var nameSearch = "";
+    var dateCreatedStart = "";
+    var dateCreatedEnd = "";
+    var totalItems = "";
+    var totalPages = "";
+
+    var GetCustomers = async () => {
+        var url = `/Customer/GetCustomers?nameSearch=${nameSearch}&dateCreatedStart=${dateCreatedStart}&dateCreatedEnd=${dateCreatedEnd}&pageSize=${pageSize}&pageNumber=${pageNumber}&sortOrder=${sortOrder}&sortDir=${sortDir}`;
+        const data = await fetchData(url, true);
+        totalItems = data[1];
+        $('#total-items').html(totalItems);
+        updatePagination();
+        return data[0];
+
+    }
+
+        var openModal = async (CustomerID) => {
+        let customer = {
+            CustomerID: null, Name: '', Email: '', Gender: '', Ratings: '',
+            DateOfBirth: '', IsActive: ''
+        };
+
+        if (CustomerID) {
+            customer = await fetchData("/Customer/GetCustomer?CustomerID=" + CustomerID);
+            customer.DateOfBirth = parseDate(customer.DateOfBirth);
+        }
+
+        $('#customer-id').val(customer.CustomerID);
+        $('#customer-name').val(customer.Name);
+        $('#customer-email').val(customer.Email);
+        $('#male').prop('checked', customer.Gender === 'Male');
+        $('#female').prop('checked', customer.Gender === 'Female');
+        $('#other').prop('checked', !customer.Gender || customer.Gender === 'Other');
+        $('#range').val(customer.Ratings);
+        $('#birthday').val(customer.DateOfBirth);
+        $('#yes').prop('checked', customer.IsActive);
+
+
+        $('#exampleModalCenter').modal('show');
+        }
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+
+
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        console.log(event)
+                        if (!form.checkValidity()) {
+                            $(form).find("input").get().forEach(e => $(e).siblings(".invalid-feedback").html(e.validationMessage));
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        else {
+                            PostProductData()
+                        }
+
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+
+
+
+        function deleteCustomer(customerID)
+        {
+            if (confirm("CONFIRM DELETE?"))
+            {
+                var url = '@Url.Action("DeleteCustomer", "Customer")' + '?CustomerID=' + customerID;
+                var sucess = function (response) {
+                    if (response.success) {
+                        GetCustomers().then(customers => populateList(customers, "Customers"));
+                        // Update the UI or perform any other actions on success
+                        alert(response.message);
+
+                        // Remove the deleted customer row from the table
+                        $("#tableBody").find(`[data-customerid='${customerID}']`).remove();
+                    }
+                    else {
+                        alert('Failed to delete customer: ' + response.message);
+                    }
+                };
+                var error = function (error) {
+                    alert('An error occurred while deleting customer: ' + error.statusText);
+                };
+
+                DeleteData(url, sucess, error);
+            }
+        }
+
+        function searchCustomers() {
+        nameSearch = $("#nameSearch").val();
+        dateCreatedStart = $("#dateCreatedStart").val();
+        dateCreatedEnd = $("#dateCreatedEnd").val();
+        GetCustomers().then(customers => populateList(customers, "Customers"));
+        }
+
+    function sortCustomers(column) {
+
+        sortDir = sortDir == "asc" ? "desc" : "asc";
+        $(".sortDir").toArray().forEach(e => {
+
+            $(e).html("").removeClass("pl-4")
+        })
+        $(".sortDir[sort-for='" + column + "']").html(sortDir == "asc" ? " v " : "^").addClass("pl-4")
+        sortOrder = column;
+        GetCustomers().then(customers => populateList(customers, "Customers"));
+        }
+
+        function SaveCustomerData() {
+        const customer = {
+            CustomerID: $('#customer-id').val(),
+            Name: $("#customer-name").val(),
+            Email: $("#customer-email").val(),
+            DateOfBirth: $('#birthday').val(),
+            IsActive: $('#yes').is(':checked'),
+            Gender: $('input[name="gender"]:checked').val(),
+            Ratings: $('#range').val()
+        };
+
+        var url = '/Customer/AddCustomer';
+        const onSuccess = () => {
+            GetCustomers().then(customers => populateList(customers, "Customers"));
+            $('#exampleModalCenter').modal('hide');
+        };
+
+        if (customer.CustomerID) {
+            url = '/Customer/UpdateCustomer';
+            PutData(url, customer, onSuccess);
+        } else {
+            postData(url, customer, onSuccess);
+            }
+
+        }
+
+    function updatePagination() {
+        var paginationHtml = '';
+        totalPages = Math.ceil(totalItems / pageSize);
+        paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="paginate(' + (1) + ')" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>';
+        paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="paginate(' + (pageNumber - 1) + ')" aria-label="Previous"><span aria-hidden="true">&larr;</span></a></li>';
+
+        for (let i = 1; i <= totalPages; i++) {
+            paginationHtml += '<li class="page-item ' + (i === pageNumber ? 'active' : '') + '"><a class="page-link" href="#" onclick="paginate(' + i + ')">' + i + '</a></li>';
+        }
+
+        paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="paginate(' + (pageNumber + 1) + ')" aria-label="Next"><span aria-hidden="true">&rarr;</span></a></li>';
+        paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="paginate(' + (totalPages) + ')" aria-label="Next"><span aria-hidden="true">&raquo;</span></a></li>';
+
+        $('.pagination').html(paginationHtml);
+    }
+
+        async function paginate(page) {
+            pageNumber = page;
+            pageSize = 10;
+
+
+            await GetCustomers().then(customers => populateList(customers, "Customers"));
+            updatePagination();
+        }
+
+        function displayStars() {
+           var ratings = $('#range').val();
+           $("#stars").html(getStarsHTML(ratings))
+        }
+
+
+        GetCustomers().then(customers => populateList(customers, "Customers"));
+
+
+        $('#back').on('click', function () {
+        $('#exampleModalCenter').modal('hide');
+        });
+
+
+
+</script>
+<script>
+    if (!localStorage.auth_token) {
+        window.location.href = "https://localhost:44301/login";
+    }
+</script>
+

@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "shooping", "shooping\shooping.csproj", "{155018E2-A8AE-4B3D-8E08-035B9E8B010D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{C47D19D3-D556-4E08-B598-CEF260555240}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShoppingDTO", "ShoppingDTO\ShoppingDTO.csproj", "{B6651ADF-8D5E-4315-9D6D-8AC203D6D4D7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{155018E2-A8AE-4B3D-8E08-035B9E8B010D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{155018E2-A8AE-4B3D-8E08-035B9E8B010D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{155018E2-A8AE-4B3D-8E08-035B9E8B010D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{155018E2-A8AE-4B3D-8E08-035B9E8B010D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C47D19D3-D556-4E08-B598-CEF260555240}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C47D19D3-D556-4E08-B598-CEF260555240}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C47D19D3-D556-4E08-B598-CEF260555240}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C47D19D3-D556-4E08-B598-CEF260555240}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6651ADF-8D5E-4315-9D6D-8AC203D6D4D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6651ADF-8D5E-4315-9D6D-8AC203D6D4D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6651ADF-8D5E-4315-9D6D-8AC203D6D4D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6651ADF-8D5E-4315-9D6D-8AC203D6D4D7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3C178F34-6675-4196-97B5-9F1F044E4752}
+	EndGlobalSection
+EndGlobal

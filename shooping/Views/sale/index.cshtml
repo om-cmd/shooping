@@ -1,0 +1,352 @@
+﻿@{
+    ViewBag.Title = "Sales";
+}
+
+<div class="row mb-4">
+    <div class="col-auto">
+        <h2>Sale</h2>
+    </div>
+    <div class="col row justify-content-end">
+        <div class="col-auto align-items-center">
+            <div class="input-group ">
+                <label class="col-form-label px-2"> From Date : </label>
+                <input type="date" class="form-control" id="dateCreatedStart" placeholder="Search dateCreatedStart..." />
+            </div>
+        </div>
+        <div class="col-auto align-items-center">
+            <div class="input-group ">
+                <label class="col-form-label px-2"> To Date :  </label>
+                <input type="date" class="form-control" id="dateCreatedEnd" placeholder="Search dateCreatedEnd..." />
+            </div>
+        </div>
+    </div>
+    <div class="col-auto ml-4">
+        <div class="input-group col">
+            <input type="text" class="form-control" id="nameSearch" placeholder="Search product..." />
+            <div class="input-group-text"> <span onclick="searchSales()">search</span></div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" onclick="openModal()">Add Sale</button>
+    </div>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th style="cursor:pointer" onclick="sortSales('CustomerName')"> Customer Name <span class="sortDir" sort-for="CustomerName"> ^ </span></th>
+            <th style="cursor:pointer" onclick="sortSales('ProductName')"> Product Name <span class="sortDir" sort-for="ProductName"> </span></th>
+            <th style="cursor:pointer" onclick="sortSales('Quantity')"> Quantity <span class="sortDir" sort-for="Quantity"> </span></th>
+            <th style="cursor:pointer" onclick="sortSales('TotalPrice')"> Total Price <span class="sortDir" sort-for="TotalPrice"> </span></th>
+            <th style="cursor:pointer" onclick="sortSales('InCash')"> In Cash <span class="sortDir" sort-for="InCash"> </span></th>
+            <th style="cursor:pointer" onclick="sortSales('Ratings')"> Ratings <span class="sortDir" sort-for="Ratings"> </span></th>
+            <th style="cursor:pointer" onclick="sortSales('SaleDate')"> Sale Date <span class="sortDir" sort-for="SaleDate"> </span></th>
+            <th> Activity </th>
+        </tr>
+    </thead>
+    <tbody id="tableBody">
+    </tbody>
+</table>
+
+<div class="row mt-2">
+    <!-- Pagination -->
+    <span class="col">Total Items : <span id="total-items">0</span> </span>
+    <nav class="col-auto" aria-label="Page navigation">
+        <ul class="pagination">
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="paginate(1)" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            <!-- Page numbers will be dynamically updated by the JavaScript function -->
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="paginate(page)" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Create Sale</h5>
+            </div>
+            <div class="modal-body">
+                <form class="needs-validation" action="" novalidate method="">
+                    <input hidden id="sale-id" />
+
+                    <div class="row">
+                        <div class="col-6 my-2">
+                            <label for="customer">Customer:</label>
+                            <select id="customer" required>
+                                <option value=""></option>
+                            </select>
+                            <div class="invalid-feedback">Please select a customer.</div>
+                        </div>
+
+                        <div class="col-6 my-2">
+                            <label for="product">Product:</label>
+                            <select id="product" onchange="calculateTotalPrice()" required>
+                                <option value=""></option>
+                            </select>
+                            <div class="invalid-feedback">Please select a product.</div>
+                        </div>
+                        <div class="col-6 my-2">
+                            <label class="form-label">Quantity</label>
+                            <input type="number" id="quantity" oninput="calculateTotalPrice()" class="form-control" required />
+                        </div>
+                        <div class="col-6 my-2">
+                            <label class="form-label">Total Price</label>
+                            <input type="number" id="totalprice" class="form-control" readonly />
+                        </div>
+
+                        <div class="col-6 my-2">
+                            <input class="form-check-input" type="checkbox" id="inCash" value="Yes">
+                            <label class="form-check-label" for="inCash"> In Cash </label>
+                        </div>
+                        <div class="col-6 my-2">
+                            <input type="range" step="0.5" min="0" max="5" class="slider" onchange="displayStars()" id="range">
+                            <label>Ratings</label>
+                            <div id="stars">
+
+                            </div>
+                        </div>
+                        <div class="col-6 my-2">
+                            <label class="form-label" for="saleDate">Sale Date:</label>
+                            <input type="date" id="saleDate" required />
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                            <button type="button" class="btn btn-primary" id="back">Back</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script defer>
+        var Sales = [];
+        var Customers = [];
+        var Products = [];
+        var sortOrder = "CustomerName";
+        var sortDir = "asc";
+        var pageSize = 10;
+        var pageNumber = 1;
+        var nameSearch = "";
+        var dateCreatedStart = "";
+        var dateCreatedEnd = "";
+        var totalItems = "";
+        var totalPages = 1;
+
+
+        var GetCustomers = async () => {
+            var url = `/Customer/GetCustomers?nameSearch=&dateCreatedStart=&dateCreatedEnd=&pageSize=100&pageNumber=1&sortOrder=Name&sortDir=asc`;
+            const data = await fetchData(url);
+
+            return data;
+
+        }
+
+        var GetProducts = async () => {
+            var url = `/Product/GetProducts?nameSearch=&dateCreatedStart=&dateCreatedEnd=&sortOrder=Name&sortDir=asc&pageSize=1000&pageNumber=1`;
+            const data = await fetchData(url);
+
+
+            return data;
+
+        }
+        var GetSales = async () => {
+            var url = `/Sale/GetSales?&nameSearch=${nameSearch}&dateCreatedStart=${dateCreatedStart}&dateCreatedEnd=${dateCreatedEnd}&sortOrder=${sortOrder}&sortDir=${sortDir}&pageSize=${pageSize}&pageNumber=${pageNumber}`;
+            const data = await fetchData(url, true);
+            totalItems = data[1];
+            $('#total-items').html(totalItems);
+            totalPages = Math.ceil(totalItems / pageSize);
+            populateList(data[0], "Sales");
+            updatePagination();
+            return data[0];
+
+        }
+        var openModal = async (SaleID) => {
+            let sale = { Customer: { CustomerID: null, Name: '' }, SaleID: null, Product: { ProductID: null, Name: '' }, Quantity: '', Ratings:0, TotalPrice: '', InCash: '', SaleDate: '' };
+            if (SaleID) {
+                sale = await fetchData("/Sale/GetSale?SaleID=" + SaleID);
+                sale.SaleDate = parseDate(sale.SaleDate);
+            }
+
+            $('#customer').val(sale.Customer.CustomerID)
+            $('#product').val(sale.Product.ProductID);
+            $('#totalprice').val(sale.TotalPrice);
+            $('#range').val(sale.Ratings);
+            $('#inCash').prop('checked', sale.InCash);;
+            $('#saleDate').val(sale.SaleDate);
+            $('#quantity').val(sale.Quantity);
+            $('#sale-id').val(sale.SaleID);
+            $('#exampleModalCenter').modal('show');
+            displayStars();
+
+
+        }
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+
+
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        console.log(event)
+                        if (!form.checkValidity()) {
+                            $(form).find("input").get().forEach(e => $(e).siblings(".invalid-feedback").html(e.validationMessage));
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        else {
+                            PostSaleData()
+                        }
+
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+
+        async function PostSaleData() {
+            var sale = {};
+            sale.Customer = { Name: "", CustomerID: $("#customer").val() };
+            sale.Product = { Name: "", ProductID: $("#product").val() };
+            sale.Quantity = parseFloat($("#quantity").val());
+            sale.TotalPrice = parseFloat($("#totalprice").val());
+            sale.InCash = $('#inCash').is(':checked'),
+            sale.Ratings = $('#range').val();
+            sale.SaleDate = $("#saleDate").val();
+
+            sale.SaleID = $("#sale-id").val();
+            var url = '/Sale/AddSale';
+            const onSuccess = () => GetSales();
+            // to update and populate data
+
+            if (sale.SaleID) {
+                url = '/sale/UpdateSale';
+                PutData(url, sale, onSuccess);
+            }
+            else {
+                postData(url, sale, onSuccess);
+
+            }
+
+
+        }
+        // GetAllList();
+
+        var deleteSale = async (saleID) => {
+    if (confirm("CONFIRM DELETE?")) {
+        var url = '@Url.Action("DeleteSale", "Sale")' + '?SaleID=' + saleID;
+
+        $.ajax({
+            type: 'DELETE',
+            url: url,
+            success: function (response) {
+                if (response.success) {
+                    GetSales();
+                    alert(response.message);
+
+                    $("#tableBody").find(`[data-saleid='${saleID}']`).remove();
+                } else {
+                    alert('Failed to delete sale: ' + response.message);
+                }
+            },
+            error: function (error) {
+                alert('An error occurred while deleting sale: ' + error.statusText);
+            },
+            contentType: "application/json",
+            dataType: 'json'
+        });
+    }
+}
+        function calculateTotalPrice() {
+            var ProductID = $("#product").val();
+
+            var Price = parseFloat(Products.find(p => p.ProductID == ProductID)?.Price) || 0;
+            const Quantity = parseFloat($("#quantity").val()) || 0;
+
+            const TotalPrice = Quantity * Price;
+
+            console.log(TotalPrice, Quantity, Price);
+
+            $("#totalprice").val(TotalPrice);
+            return TotalPrice;
+        }
+
+        async function GetAllList() {
+            GetCustomers().then(data => Site.populateDropdown("customer", data));
+            GetProducts().then(data => Site.populateDropdown("product", data));
+            GetSales();
+        }
+
+
+
+
+        function searchSales() {
+            nameSearch = $("#nameSearch").val().toLowerCase();
+            dateCreatedStart = $("#dateCreatedStart").val();
+            dateCreatedEnd = $("#dateCreatedEnd").val();
+
+            GetSales();
+        }
+
+        function sortSales(column) {
+            sortDir = sortDir == "asc" ? "desc" : "asc";
+            $(".sortDir").toArray().forEach(e => {
+                $(e).html("").removeClass("pl-4");
+            });
+            $(".sortDir[sort-for='" + column + "']").html(sortDir == "asc" ? " v " : "^").addClass("pl-4");
+            sortOrder = column;
+            GetSales();
+        }
+
+        function updatePagination() {
+            var paginationHtml = '';
+            totalPages = Math.ceil(totalItems / pageSize);
+            paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="paginate(' + (1) + ')" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>';
+            paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="paginate(' + (pageNumber - 1) + ')" aria-label="Previous"><span aria-hidden="true">&larr;</span></a></li>';
+
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHtml += '<li class="page-item ' + (i === pageNumber ? 'active' : '') + '"><a class="page-link" href="#" onclick="paginate(' + i + ')">' + i + '</a></li>';
+            }
+
+            paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="paginate(' + (pageNumber + 1) + ')" aria-label="Next"><span aria-hidden="true">&rarr;</span></a></li>';
+            paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="paginate(' + (totalPages) + ')" aria-label="Next"><span aria-hidden="true">&raquo;</span></a></li>';
+
+            $('.pagination').html(paginationHtml);
+        }
+        function displayStars()
+        {
+            var ratings = $('#range').val();
+            $("#stars").html(getStarsHTML(ratings))
+        }
+
+        GetAllList();
+
+        var paginate = async (page) => {
+            pageNumber = page;
+          /*  pageSize = 10;*/
+
+            await GetSales();
+            updatePagination();
+        }
+        $('#back').on('click', function () {
+            $('#exampleModalCenter').modal('hide');
+        });
+
+</script>
+<script>
+    if (!localStorage.auth_token) {
+        window.location.href = "https://localhost:44301/login";
+    }
+</script>
+

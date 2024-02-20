@@ -1,0 +1,302 @@
+﻿@{
+    ViewBag.Title = "Product";
+}
+
+<div class="row mb-4">
+    <div class="col-auto">
+        <h2>Products</h2>
+    </div>
+    <div class="col row justify-content-end">
+        <div class="col-auto align-items-center">
+            <div class="input-group ">
+                <label class="col-form-label px-2"> From Date : </label>
+                <input type="date" class="form-control" id="dateCreatedStart" placeholder="Search dateCreatedStart..." />
+            </div>
+        </div>
+        <div class="col-auto align-items-center">
+            <div class="input-group ">
+                <label class="col-form-label px-2"> To Date :  </label>
+                <input type="date" class="form-control" id="dateCreatedEnd" placeholder="Search dateCreatedEnd..." />
+            </div>
+        </div>
+    </div>
+    <div class="col-auto ml-4">
+        <div class="input-group col">
+            <input type="text" class="form-control" id="nameSearch" placeholder="Search product..." />
+            <div class="input-group-text"> <span onclick="searchProducts()">search</span></div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" onclick="openModal(null)">Add Product</button>
+    </div>
+</div>
+
+<table class="table table-striped">
+    <thead bgcolor="green">
+        <tr>
+            <th style="cursor:pointer" onclick="sortProducts('Name')"> Name <span class="sortDir" sort-for="Name"> ^ </span></th>
+            <th style="cursor:pointer" onclick="sortProducts('Price')"> Price <span class="sortDir" sort-for="Price"> </span></th>
+            <th style="cursor:pointer" onclick="sortProducts('Ratings')"> Ratings <span class="sortDir" sort-for="Ratings"> </span></th>
+            <th style="cursor:pointer" onclick="sortProducts('ExpDate')"> ExpDate <span class="sortDir" sort-for="ExpDate"> </span></th>
+            <th style="cursor:pointer" onclick="sortProducts('IsGrocery')"> IsGrocery <span class="sortDir" sort-for="IsGrocery"> </span></th>
+            <th> Actions </th>
+        </tr>
+    </thead>
+    <tbody id="tableBody">
+    </tbody>
+</table>
+
+<footer class="row mt-2">
+    <!-- Pagination -->
+    <span class="col">Total Items : <span id="total-items">0</span> </span>
+    <nav class="col-auto" aria-label="Page navigation">
+        <ul class="pagination">
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="paginate(1)" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            <!-- Page numbers will be dynamically updated by the JavaScript function -->
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="paginate(page)" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</footer>
+
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Create Product</h5>
+            </div>
+            <div class="modal-body">
+                <form class="needs-validation" method="dialog" action="" novalidate>
+
+                    <input hidden id="item-id" />
+
+                    <div class="row">
+                        <div class="col-6 my-2">
+                            <label for="item-name" class="form-label"> Name</label>
+                            <input id="item-name" maxlength="20" minlength="3" pattern="^[A-Za-z]+$" type="text" class="form-control" required />
+                            <div class="invalid-feedback">
+                                Please use criteria.
+                            </div>
+                        </div>
+                        <div class="col-6 my-2">
+                            <label for="item-price" class="form-label"> Price</label>
+                            <input id="item-price" type="number" step="0.01" pattern="^\d+(,\d{1,2})?$" class="form-control" required />
+                            <div class="invalid-feedback">
+                                Please use criteria.
+                            </div>
+                        </div>
+                        <div class="col-6 my-2">
+                            <input type="range" step="0.5" min="0" max="5" class="slider" onchange="displayStars()" id="range">
+                            <label>Ratings</label>
+                            <div id="stars">
+
+                            </div>
+                            <div class="col-6 my-2">
+
+                                <input class="form-check-input" type="checkbox" id="yes" value="Yes">
+                                <label class="form-check-label" for="yes"> IsActive </label>
+                            </div>
+                            <div class="col-6 form-group my-2">
+                                <label class="form-label" for="ExpDate">ExpDate:</label>
+                                <input class="form-control" type="date" id="birthday" required>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary">Submit</button>
+                                <button type="button" class="btn btn-primary" id="back">Back</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script defer>
+    var Products = [];
+    var sortOrder = "Name";
+    var sortDir = "asc";
+    var pageSize = 10;
+    var pageNumber = 1;
+    var nameSearch = "";
+    var dateCreatedStart = "";
+    var dateCreatedEnd = "";
+    var totalItems = "";
+    var totalPages = "";
+
+
+    var GetProducts = async () => {
+        var url = `/Product/GetProducts?nameSearch=${nameSearch}&dateCreatedStart=${dateCreatedStart}&dateCreatedEnd=${dateCreatedEnd}&sortOrder=${sortOrder}&sortDir=${sortDir}&pageSize=${pageSize}&pageNumber=${pageNumber}`;
+        const data = await fetchData(url, true);
+        totalItems = data[1];
+        $('#total-items').html(totalItems);
+        updatePagination();
+        return data[0];
+
+    }
+
+
+    var openModal = async (ProductID) => {
+        let product = { ProductID: null, Name: '', Price: '', Ratings: '', IsGrocery: '', ExpDate: '' };
+        if (ProductID) {
+            product = await fetchData("/Product/GetProduct?ProductID=" + ProductID);
+            product.ExpDate = parseDate(product.ExpDate);
+        }
+
+        $('#item-name').val(product.Name);
+        $('#item-price').val(product.Price);
+        $('#range').val(product.Ratings);
+        $('#yes').prop('checked', product.IsGrocery);
+        $('#birthday').val(product.ExpDate);
+        $('#item-id').val(product.ProductID);
+
+        $('#exampleModalCenter').modal('show');
+    }
+
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    console.log(event)
+                    if (!form.checkValidity()) {
+                        $(form).find("input").get().forEach(e => $(e).siblings(".invalid-feedback").html(e.validationMessage));
+                        event.preventDefault()
+                        event.stopPropagation()
+                    } else {
+                        PostProductData()
+                    }
+
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+
+
+    function deleteProduct(productID) {
+        if (confirm("CONFIRM DELETE?")) {
+            var url = '@Url.Action("DeleteProduct", "Product")' + '?productID=' + productID;
+
+            $.ajax({
+                type: 'DELETE',
+                url: url,
+                success: function (response) {
+                    if (response.success) {
+
+                        GetProducts().then(products => populateList(products, "Products"));
+                        alert(response.message);
+
+                        $("#tableBody").find(`[data-productid='${productID}']`).remove();
+                    } else
+                    {
+                        alert('Failed to delete product: ' + response.message);
+                    }
+                },
+                error: function (error) {
+                    alert('An error occurred while deleting product: ' + error.statusText);
+                },
+                contentType: "application/json",
+                dataType: 'json'
+            });
+        }
+    }
+
+    function searchProducts() {
+        nameSearch = $("#nameSearch").val().toLowerCase();
+        dateCreatedStart = $("#dateCreatedStart").val();
+        dateCreatedEnd = $("#dateCreatedEnd").val();
+        GetProducts().then(products => populateList(products, "Products"));
+    }
+
+    function sortProducts(column) {
+
+        sortDir = sortDir == "asc" ? "desc" : "asc";
+        $(".sortDir").toArray().forEach(e => {
+
+            $(e).html("").removeClass("pl-4")
+        })
+        $(".sortDir[sort-for='" + column + "']").html(sortDir == "asc" ? " v " : "^").addClass("pl-4")
+        sortOrder = column;
+        GetProducts().then(products => populateList(products, "Products"));
+    }
+
+    async function PostProductData() {
+        var product = {
+            ProductID: $('#item-id').val(),
+            Name: $("#item-name").val(),
+            Price: parseFloat($("#item-price").val()) || 0,
+            Ratings: $('#range').val(),
+            IsGrocery: $('#yes').is(':checked'),
+            ExpDate: $('#birthday').val(),
+        };
+
+        //if (parseInt($("#item-id").val())) product.ProductID = parseInt($("#item-id").val());
+
+        var url = '/Product/AddProduct';
+        const onSuccess = () => {
+            GetProducts().then(products => populateList(products, "Products"));
+            $('#exampleModalCenter').modal('hide');
+        };
+
+        if (product.ProductID) {
+            url = '/Product/UpdateProduct';
+            PutData(url, product, onSuccess);
+        } else {
+            postData(url, product, onSuccess);
+        }
+    }
+
+
+    function updatePagination() {
+        var paginationHtml = '';
+        totalPages = Math.ceil(totalItems / pageSize);
+        paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="paginate(' + (1) + ')" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>';
+        paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="paginate(' + (pageNumber - 1) + ')" aria-label="Previous"><span aria-hidden="true">&larr;</span></a></li>';
+
+        for (let i = 1; i <= totalPages; i++) {
+            paginationHtml += '<li class="page-item ' + (i === pageNumber ? 'active' : '') + '"><a class="page-link" href="#" onclick="paginate(' + i + ')">' + i + '</a></li>';
+        }
+
+        paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="paginate(' + (pageNumber + 1) + ')" aria-label="Next"><span aria-hidden="true">&rarr;</span></a></li>';
+        paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="paginate(' + (totalPages) + ')" aria-label="Next"><span aria-hidden="true">&raquo;</span></a></li>';
+
+        $('.pagination').html(paginationHtml);
+    }
+
+    async function paginate(page) {
+        pageNumber = page;
+        pageSize = 10;
+
+        await GetProducts().then(products => populateList(products, "Products"));
+        updatePagination();
+    }
+
+    function displayStars() {
+        var ratings = $('#range').val();
+        $("#stars").html(getStarsHTML(ratings))
+    }
+
+
+    GetProducts().then(products => populateList(products, "Products"));
+
+    $('#back').on('click', function () {
+        $('#exampleModalCenter').modal('hide');
+    });
+
+</script>
+
+<script>
+    if (!localStorage.auth_token) {
+        window.location.href = "https://localhost:44301/login";
+    }
+</script>
